@@ -66,12 +66,12 @@ def parse_args(argc, argv):
         print("[ERROR] Invalid affinity")
         quit(1)
 
-def on_same_socket(i, j, scheme):
-    if scheme == "scattered":
-        return (rank_i % 2 == 0) and (rank_j % 2 == 0)
-    if scheme == "compact":
+def on_same_socket(i, j):
+    if affinity == "scattered":
+        return (i % 2 == 0) and (j % 2 == 0)
+    if affinity == "compact":
         k = num_cores_per_node / 2
-        return (rank_i < k and rank_j < k) or (rank_i > k and rank_j > k)
+        return (i < k and j < k) or (i >= k and j >= k)
 
 argv = sys.argv[1:]
 argc = len(argv)
@@ -125,7 +125,7 @@ for rank_i, row in enumerate(mat):
                 count_intra_socket += 1
             else:
                 # 'rank_ i' and 'rank_j' are on same socket
-                if on_same_socket(rank_i, rank_j, affinity):
+                if on_same_socket(rank_i, rank_j):
                     if col < perf_min_intra_socket:
                         perf_min_intra_socket = col
                     if col > perf_max_intra_socket:
