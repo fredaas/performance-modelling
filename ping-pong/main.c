@@ -1,19 +1,19 @@
 /*
- * DESCRIPTION
- *
- * This benchmark derives the coefficients of the ping-pong performance model
+ * The Hockney benchmark derives the coefficients of the Hockney communication
+ * performance model,
  *
  *     t_comm = t_alpha + M * t_beta,
  *
- * where t_alpha [s] is the communication channel's setup time, and t_beta
- * [s / Byte] is the communication channel's inverse bandwidth.
+ * where t_alpha [s] is the communication channel's setup time, t_beta [s /
+ * byte] is the communication channel's inverse bandwidth, and M is the message
+ * size in bytes.
  *
- * The coefficients are derived as follows. For each communication pair,
- * msg_size elements are communicated between the sending and receiving rank.
- * Each element is transferred from the sender to the receiver, and back again.
- * We assume the latency is the same in both directions. Thus the latency is
+ * For each communication pair, msg_size elements are communicated between the
+ * sending and receiving rank. Each element is transferred from the sender to
+ * the receiver, and back again. We assume the latency is the same in both
+ * directions. Thus the latency given by
  *
- *     (t_end - t_start) / (2 * num_bench * msg_size).
+ *     (t_end - t_start) / (2 * num_bench * msg_size * sizeof(double)).
  *
  * t_alpha is approximated by setting num_bench high and msg_size low; t_beta is
  * approximated by setting num_bench high and msg_size low.
@@ -36,7 +36,7 @@ int rank, world_size;
 
 double *restrict mat = NULL;
 
-double *restrict lmat = NULL;
+double *restrict p_mat = NULL;
 
 real_t *restrict send_buff = NULL;
 real_t *restrict recv_buff = NULL;
@@ -46,7 +46,7 @@ int num_pairs = 0;
 
 MPI_Group group_world;
 
-const int MSG_SIZE_MAX  = (int)(2 * (1 << 20)); /* 128 * 1024^2 = 128 MiB */
+const int MSG_SIZE_MAX  = 2 * (1 << 20); /* 64 * 2 * 1024^2 = 128 MiB */
 const int MSG_SIZE_MIN  = 1;
 const int NUM_BENCH_MIN = 10;
 const int NUM_BENCH_MAX = 10000;
@@ -58,11 +58,11 @@ const int NUM_BENCH_MAX = 10000;
     mat[(k) * world_size * world_size + world_size * (i) + (j)]
 
 /* Local latency matrix */
-#define T_LMAT(k, i) \
-    lmat[(k) * world_size + (i)]
+#define T_PMAT(k, i) \
+    p_mat[(k) * world_size + (i)]
 
 /* Local communication pair matrix */
-#define P_LMAT(i, j) \
+#define P_PMAT(i, j) \
     pairs[2 * (i) + (j)]
 
 void create_comm_pair(int src, int dst, MPI_Comm *comm_pair);
@@ -88,13 +88,13 @@ int main(void)
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Gather(
-        &T_LMAT(T_ALPHA, 0), world_size, MPI_DOUBLE,
+        &T_PMAT(T_ALPHA, 0), world_size, MPI_DOUBLE,
         &T_MAT(T_ALPHA, 0, 0), world_size, MPI_DOUBLE,
         0, MPI_COMM_WORLD
     );
 
     MPI_Gather(
-        &T_LMAT(T_BETA, 0), world_size, MPI_DOUBLE,
+        &T_PMAT(T_BETA, 0), world_size, MPI_DOUBLE,
         &T_MAT(T_BETA, 0, 0), world_size, MPI_DOUBLE,
         0, MPI_COMM_WORLD
     );
@@ -118,7 +118,7 @@ void free_resources(void)
 {
     free(send_buff);
     free(recv_buff);
-    free(lmat);
+    free(p_mat);
     free(mat);
 }
 
@@ -167,8 +167,8 @@ void init_comm_pairs(void)
     {
         for (int j = i + 1; j < world_size; j++)
         {
-            P_LMAT(k, 0) = i;
-            P_LMAT(k, 1) = j;
+            P_PMAT(k, 0) = i;
+            P_PMAT(k, 1) = j;
             k++;
         }
     }
@@ -176,7 +176,7 @@ void init_comm_pairs(void)
     if (rank == 0)
     {
         for (int i = 0; i < num_pairs; i++)
-            printf("(%d %d) ", P_LMAT(i, 0), P_LMAT(i, 1));
+            printf("(%d %d) ", P_PMAT(i, 0), P_PMAT(i, 1));
         printf("\n");
     }
 }
@@ -188,7 +188,7 @@ void init(void)
     if (rank == 0)
         mat = (double *)malloc(2 * world_size * world_size * sizeof(double));
 
-    lmat = (double *)malloc(2 * world_size * sizeof(double));
+    p_mat = (double *)malloc(2 * world_size * sizeof(double));
 
     send_buff = (real_t *)calloc(MSG_SIZE_MAX, sizeof(real_t));
     recv_buff = (real_t *)calloc(MSG_SIZE_MAX, sizeof(real_t));
@@ -201,8 +201,8 @@ void ping_pong_bench(int msg_size, int num_bench, int k)
 {
     for (int i = 0; i < num_pairs; i++)
     {
-        int src = P_LMAT(i, 0);
-        int dst = P_LMAT(i, 1);
+        int src = P_PMAT(i, 0);
+        int dst = P_PMAT(i, 1);
 
         if ((rank != src) && (rank != dst))
             continue;
@@ -240,6 +240,6 @@ void ping_pong(int src, int dst, int msg_size, int num_bench, int k)
                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
         end = MPI_Wtime();
-        T_LMAT(k, dst) = (end - start) / (2 * num_bench * msg_size * sizeof(real_t));
+        T_PMAT(k, dst) = (end - start) / (2 * num_bench * msg_size * sizeof(real_t));
     }
 }

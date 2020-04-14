@@ -1,5 +1,7 @@
 set terminal pdf enhanced size 4,3.5 font "courier"
 
+set loadpath "./data"
+
 unset key
 set colorbox
 set rmargin 8
@@ -18,9 +20,9 @@ set xlabel "Rank"
 set ylabel "Rank"
 
 # set cblabel "Latency" offset 2,0
-set title "Ping-pong: Latency"
-plot "out_alpha.txt" matrix with image
+set title "Dell XPS: Latency"
+plot "dellxps_alpha.txt" matrix with image
 
 # set cblabel "Inverse Bandwidth" offset 2,0
-set title "Ping-pong: Inverse Bandwidth"
-plot "out_beta.txt" matrix with image
+set title "Dell XPS: Inverse Bandwidth"
+plot "dellxps_beta.txt" matrix with image
