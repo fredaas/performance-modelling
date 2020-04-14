@@ -20,7 +20,8 @@
 #
 #     affinity
 #
-#         Must be one of 'scattered' or 'compact'.
+#         Must be one of 'scattered' or 'compact'. Ignored when 'sockets' is set
+#         to 1.
 #
 
 import os
@@ -37,34 +38,15 @@ def parse_args(argc, argv):
     global num_cores_per_node
     global affinity
 
-    if argc != 4:
-        print("[ERROR] Expected 3 arguments, {} given".format(argc))
-        quit(1)
+    filename             = argv[0]
+    num_sockets_per_node = int(argv[1])
+    num_cores_per_node   = int(argv[2])
 
-    filename = argv[0]
-    num_sockets_per_node = argv[1]
-    num_cores_per_node = argv[2]
-    affinity = argv[3]
+    # Don't care about affinity on one socket
+    if num_sockets_per_node == 1:
+        return
 
-    if not os.path.isfile(filename):
-        print("[ERROR] Invalid input file")
-        quit(1)
-    try:
-        num_sockets_per_node = int(num_sockets_per_node)
-    except:
-        print("[ERROR] Number of sockets must be of type 'int'")
-        quit(1)
-    if num_sockets_per_node not in [ 1, 2 ]:
-        print("[ERROR] Invalid socket value")
-        quit(1)
-    try:
-        num_cores_per_node = int(num_cores_per_node)
-    except:
-        print("[ERROR] Number of cores must be of type 'int'")
-        quit(1)
-    if affinity not in "scattered compact".split():
-        print("[ERROR] Invalid affinity")
-        quit(1)
+    affinity             = argv[3]
 
 def on_same_socket(i, j):
     if affinity == "scattered":
