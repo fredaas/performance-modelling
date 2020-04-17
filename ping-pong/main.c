@@ -80,6 +80,13 @@ int main(void)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_group(MPI_COMM_WORLD, &group_world);
 
+    if (rank == 0)
+    {
+        int n = world_size;
+        printf("%d processes\n", n);
+        printf("%d communication pairs\n", (n * (n - 1) / 2));
+    }
+
     init();
 
     ping_pong_bench(MSG_SIZE_MIN, NUM_BENCH_MAX, T_ALPHA);
@@ -155,6 +162,16 @@ void dump_matrix(void)
     }
 }
 
+void print_comm_pairs(void)
+{
+    if (rank == 0)
+    {
+        for (int i = 0; i < num_pairs; i++)
+            printf("(%d %d) ", P_PMAT(i, 0), P_PMAT(i, 1));
+        printf("\n");
+    }
+}
+
 void init_comm_pairs(void)
 {
     for (int i = world_size - 1; i >= 0; i--)
@@ -171,13 +188,6 @@ void init_comm_pairs(void)
             P_PMAT(k, 1) = j;
             k++;
         }
-    }
-
-    if (rank == 0)
-    {
-        for (int i = 0; i < num_pairs; i++)
-            printf("(%d %d) ", P_PMAT(i, 0), P_PMAT(i, 1));
-        printf("\n");
     }
 }
 
