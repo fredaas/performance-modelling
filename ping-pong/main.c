@@ -1,5 +1,7 @@
 /*
- * The Hockney benchmark derives the coefficients of the Hockney communication
+ * DESCRIPTION
+ *
+ * The Hockney benchmark derives the t_alpha and t_beta coefficients of the Hockney
  * performance model,
  *
  *     t_comm = t_alpha + M * t_beta,
@@ -8,10 +10,14 @@
  * byte] is the communication channel's inverse bandwidth, and M is the message
  * size in bytes.
  *
+ * IMPLEMENTATION DETAILS
+ *
  * For each communication pair, msg_size elements are communicated between the
  * sending and receiving rank. Each element is transferred from the sender to
  * the receiver, and back again. We assume the latency is the same in both
- * directions. Thus the latency given by
+ * directions such that the latency between the communication pair (i, j) is the
+ * same as for (j, i). Therefore, given N processes, there are N * (N - 1) / 2
+ * communication pairs, and the latency between each pair is
  *
  *     (t_end - t_start) / (2 * num_bench * msg_size * sizeof(double)).
  *
@@ -41,10 +47,8 @@ double *restrict p_mat = NULL;
 real_t *restrict send_buff = NULL;
 real_t *restrict recv_buff = NULL;
 
-int *restrict pairs = NULL;
-int num_pairs = 0;
-
-MPI_Group world_group;
+int *restrict tuples = NULL;
+int num_tuples = 0;
 
 const int MSG_SIZE_MAX  = 2 * (1 << 20); /* 64 * 2 * 1024^2 = 128 MiB */
 const int MSG_SIZE_MIN  = 1;
@@ -62,37 +66,49 @@ const int NUM_BENCH_MAX = 10000;
     p_mat[(k) * world_size + (i)]
 
 /* Local communication pair matrix */
-#define P_PMAT(i, j) \
-    pairs[2 * (i) + (j)]
+#define TUPLE(i, j) \
+    tuples[2 * (i) + (j)]
 
-void create_comm_pair(int src, int dst, MPI_Comm *comm_pair);
 void dump_matrix(void);
 void free_resources(void);
 void init(void);
+void init_comm_tuples(void);
 void mirror_matrix(void);
 void ping_pong(int src, int dst, int msg_size, int num_bench, int k);
 void ping_pong_bench(int msg_size, int num_bench, int k);
+void print_comm_tuples(void);
+double walltime(void);
 
 int main(void)
 {
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
 
     if (rank == 0)
     {
         int n = world_size;
-        printf("%d processes\n", n);
-        printf("%d communication pairs\n", (n * (n - 1) / 2));
+        printf("Processes: %d\n", n);
+        printf("Tuples: %d\n", (n * (n - 1) / 2));
     }
 
     init();
+
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    double t_latency = 0.0;
+
+    if (rank == 0)
+        t_latency = walltime();
 
     ping_pong_bench(MSG_SIZE_MIN, NUM_BENCH_MAX, T_ALPHA);
     ping_pong_bench(MSG_SIZE_MAX, NUM_BENCH_MIN, T_BETA);
 
     MPI_Barrier(MPI_COMM_WORLD);
+
+    if (rank == 0)
+        printf("Latency: %.4lf\n", walltime() - t_latency);
 
     MPI_Gather(
         &T_PMAT(T_ALPHA, 0), world_size, MPI_DOUBLE,
@@ -121,24 +137,20 @@ int main(void)
     return 0;
 }
 
+double walltime(void)
+{
+    static struct timeval t;
+    gettimeofday(&t, NULL);
+    return (double)t.tv_sec + (double)t.tv_usec * 1.0e-6;
+}
+
 void free_resources(void)
 {
     free(send_buff);
     free(recv_buff);
     free(p_mat);
     free(mat);
-}
-
-void create_comm_pair(int src, int dst, MPI_Comm *comm_pair)
-{
-    /* Create a new communication pair from 'src' and 'dst'. Both processes in
-       'group' must call MPI_Comm_create_group with 'group' containing the same
-       ranks in the same order. In addition, 'group' must be a subgroup of the
-       group associated with MPI_COMM_WORLD. */
-    int pair[2] = { src, dst };
-    MPI_Group group;
-    MPI_Group_incl(world_group, 2, pair, &group);
-    MPI_Comm_create_group(MPI_COMM_WORLD, group, 0, comm_pair);
+    free(tuples);
 }
 
 void mirror_matrix(void)
@@ -166,30 +178,30 @@ void dump_matrix(void)
     }
 }
 
-void print_comm_pairs(void)
+void print_comm_tuples(void)
 {
     if (rank == 0)
     {
-        for (int i = 0; i < num_pairs; i++)
-            printf("(%d %d) ", P_PMAT(i, 0), P_PMAT(i, 1));
+        for (int i = 0; i < num_tuples; i++)
+            printf("(%d %d) ", TUPLE(i, 0), TUPLE(i, 1));
         printf("\n");
     }
 }
 
-void init_comm_pairs(void)
+void init_comm_tuples(void)
 {
     for (int i = world_size - 1; i >= 0; i--)
-        num_pairs += i;
+        num_tuples += i;
 
-    pairs = (int *)calloc(num_pairs * 2, sizeof(int));
+    tuples = (int *)calloc(num_tuples * 2, sizeof(int));
 
     int k = 0;
     for (int i = 0; i < world_size - 1; i++)
     {
         for (int j = i + 1; j < world_size; j++)
         {
-            P_PMAT(k, 0) = i;
-            P_PMAT(k, 1) = j;
+            TUPLE(k, 0) = i;
+            TUPLE(k, 1) = j;
             k++;
         }
     }
@@ -197,7 +209,7 @@ void init_comm_pairs(void)
 
 void init(void)
 {
-    init_comm_pairs();
+    init_comm_tuples();
 
     if (rank == 0)
         mat = (double *)malloc(2 * world_size * world_size * sizeof(double));
@@ -213,19 +225,15 @@ void init(void)
 
 void ping_pong_bench(int msg_size, int num_bench, int k)
 {
-    for (int i = 0; i < num_pairs; i++)
+    for (int i = 0; i < num_tuples; i++)
     {
-        int src = P_PMAT(i, 0);
-        int dst = P_PMAT(i, 1);
+        int src = TUPLE(i, 0);
+        int dst = TUPLE(i, 1);
 
-        if ((rank != src) && (rank != dst))
-            continue;
+        MPI_Barrier(MPI_COMM_WORLD);
 
-        MPI_Comm comm_pair;
-        create_comm_pair(src, dst, &comm_pair);
-        MPI_Barrier(comm_pair);
-        ping_pong(src, dst, msg_size, num_bench, k);
-        MPI_Comm_free(&comm_pair);
+        if ((rank == src) || (rank == dst))
+            ping_pong(src, dst, msg_size, num_bench, k);
     }
 }
 
