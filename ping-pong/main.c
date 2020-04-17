@@ -44,7 +44,7 @@ real_t *restrict recv_buff = NULL;
 int *restrict pairs = NULL;
 int num_pairs = 0;
 
-MPI_Group group_world;
+MPI_Group world_group;
 
 const int MSG_SIZE_MAX  = 2 * (1 << 20); /* 64 * 2 * 1024^2 = 128 MiB */
 const int MSG_SIZE_MIN  = 1;
@@ -78,7 +78,7 @@ int main(void)
     MPI_Init(NULL, NULL);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Comm_group(MPI_COMM_WORLD, &group_world);
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
 
     if (rank == 0)
     {
@@ -131,10 +131,14 @@ void free_resources(void)
 
 void create_comm_pair(int src, int dst, MPI_Comm *comm_pair)
 {
+    /* Create a new communication pair from 'src' and 'dst'. Both processes in
+       'group' must call MPI_Comm_create_group with 'group' containing the same
+       ranks in the same order. In addition, 'group' must be a subgroup of the
+       group associated with MPI_COMM_WORLD. */
     int pair[2] = { src, dst };
-    MPI_Group group_pair;
-    MPI_Group_incl(group_world, 2, pair, &group_pair);
-    MPI_Comm_create_group(MPI_COMM_WORLD, group_pair, 0, comm_pair);
+    MPI_Group group;
+    MPI_Group_incl(world_group, 2, pair, &group);
+    MPI_Comm_create_group(MPI_COMM_WORLD, group, 0, comm_pair);
 }
 
 void mirror_matrix(void)
