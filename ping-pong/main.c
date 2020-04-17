@@ -94,7 +94,6 @@ int main(void)
 
     init();
 
-
     MPI_Barrier(MPI_COMM_WORLD);
 
     double t_latency = 0.0;
