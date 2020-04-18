@@ -1,8 +1,8 @@
 /*
  * DESCRIPTION
  *
- * The Hockney benchmark derives the t_alpha and t_beta coefficients of the Hockney
- * performance model,
+ * The Hockney benchmark derives the t_alpha and t_beta coefficients of the
+ * Hockney performance model,
  *
  *     t_comm = t_alpha + M * t_beta,
  *
