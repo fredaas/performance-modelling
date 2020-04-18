@@ -96,10 +96,10 @@ int main(void)
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double t_latency = 0.0;
+    double t_walltime = 0.0;
 
     if (rank == 0)
-        t_latency = walltime();
+        t_walltime = walltime();
 
     ping_pong_bench(MSG_SIZE_MIN, NUM_BENCH_MAX, T_ALPHA);
     ping_pong_bench(MSG_SIZE_MAX, NUM_BENCH_MIN, T_BETA);
@@ -107,7 +107,7 @@ int main(void)
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (rank == 0)
-        printf("Latency: %.4lf\n", walltime() - t_latency);
+        printf("Latency: %.4lf\n", walltime() - t_walltime);
 
     MPI_Gather(
         &T_PMAT(T_ALPHA, 0), world_size, MPI_DOUBLE,
