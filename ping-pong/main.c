@@ -1,28 +1,19 @@
 /*
  * DESCRIPTION
  *
- * The Hockney benchmark derives the t_alpha and t_beta coefficients of the
- * Hockney performance model,
+ * The ping-pong benchmark derives up to three levels of latency measurements,
+ * namely intra-socket, inter-socket, and inter-node. The measurements are
+ * stored as two adjacency matrices describing the setup latency and inverse
+ * bandwidth between each core. Combined, these measurements yield the total
+ * communication latency for a given message size.
  *
- *     t_comm = t_alpha + M * t_beta,
+ * We assume the latency is the same in each direction of every two cores. Given
+ * N cores, there are N * (N - 1) / 2 communication pairs.
  *
- * where t_alpha [s] is the communication channel's setup time, t_beta [s /
- * byte] is the communication channel's inverse bandwidth, and M is the message
- * size in bytes.
+ * NOTE
  *
- * IMPLEMENTATION DETAILS
- *
- * For each communication pair, msg_size elements are communicated between the
- * sending and receiving rank. Each element is transferred from the sender to
- * the receiver, and back again. We assume the latency is the same in both
- * directions such that the latency between the communication pair (i, j) is the
- * same as for (j, i). Therefore, given N processes, there are N * (N - 1) / 2
- * communication pairs, and the latency between each pair is
- *
- *     (t_end - t_start) / (2 * num_bench * msg_size * sizeof(double)).
- *
- * t_alpha is approximated by setting num_bench high and msg_size low; t_beta is
- * approximated by setting num_bench high and msg_size low.
+ * The message size must be set large enough to completely saturate the
+ * communication channels in order to accurately describe the inverse bandwidth.
  */
 
 #include <stdio.h>
