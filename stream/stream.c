@@ -6,12 +6,10 @@
  *     (1995).
  *
  *     The benchmark requires different amounts of memory on different systems.
- *     In general, each array operand must be at least 4 times the size of the
- *     largest available cache memory. (L3 on most modern systems.)
- *
- *
- *
- *
+ *     In general, each array operand should be at least 4 x times the size of the
+ *     largest available cache memory. (L3 on most modern systems.) There is an
+ *     option to print the memory ratio to aid in configuring benchmark memory
+ *     requirements.
  */
 
 #include <stdio.h>

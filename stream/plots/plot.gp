@@ -14,9 +14,12 @@ set ylabel 'Bandwith [GB/s]'
 
 set title 'IDUN: Intel Xeon E5-2630 v2'
 plot 'idun_e5_scatter.txt' u 1:($3) title 'Scatter', \
-     'idun_e5_compact.txt'   u 1:($3) title 'Compact', \
-
+     'idun_e5_compact.txt' u 1:($3) title 'Compact', \
 
 set title 'IDUN: Intel Xeon Gold 6132'
 plot 'idun_gold_scatter.txt' u 1:($3) title 'Scatter', \
-     'idun_gold_compact.txt'   u 1:($3) title 'Compact', \
+     'idun_gold_compact.txt' u 1:($3) title 'Compact', \
+
+set title 'FRAM: Intel Xeon E5-2683 v4'
+plot 'fram_e5_scatter.txt' u 1:($3) title 'Scatter', \
+     'fram_e5_compact.txt' u 1:($3) title 'Compact', \

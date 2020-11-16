@@ -1,4 +1,4 @@
-# treads, min, max, avg
+# threads, min, max, avg
 1 12.6 12.7 12.7 [GB/s]
 2 25.3 25.6 25.5 [GB/s]
 3 37.1 37.6 37.4 [GB/s]

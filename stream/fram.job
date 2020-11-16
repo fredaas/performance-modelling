@@ -1,6 +1,6 @@
 #!/usr/bin/bash
-#SBATCH --account=share-ie-idi
-#SBATCH --partition=CPUQ
+#SBATCH --account=nn9589k
+#SBATCH --partition=normal
 #SBATCH --time=00:10:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
@@ -20,7 +20,7 @@ export OMP_SCHEDULE="guided"
 unset KMP_AFFINITY
 
 echo "COMPACT"
-for i in `seq 1 20`; do OMP_PLACES="cores" OMP_PROC_BIND="close" OMP_NUM_THREADS=$i ./stream; done
+for i in `seq 1 32`; do OMP_PLACES="cores" OMP_PROC_BIND="close" OMP_NUM_THREADS=$i ./stream; done
 
 echo "SCATTER"
-for i in `seq 1 20`; do OMP_PLACES="cores" OMP_PROC_BIND="spread" OMP_NUM_THREADS=$i ./stream; done
+for i in `seq 1 32`; do OMP_PLACES="cores" OMP_PROC_BIND="spread" OMP_NUM_THREADS=$i ./stream; done
