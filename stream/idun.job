@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+#SBATCH --account=share-ie-idi
+#SBATCH --partition=CPUQ
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --exclusive
+#SBATCH --job-name="stream"
+#SBATCH --output=stream_%j.txt
+
+cd ${SLURM_SUBMIT_DIR}
+
+echo "WORKING DIR: $SLURM_SUBMIT_DIR"
+echo "JOB NAME: $SLURM_JOB_NAME"
+echo "JOB ID: $SLURM_JOB_ID"
+echo "NODES ($SLURM_JOB_NUM_NODES): $SLURM_JOB_NODELIST"
+
+export OMP_SCHEDULE=guided
+
+echo "COMPACT"
+for i in `seq 1 20`; do KMP_AFFINITY="compact" OMP_NUM_THREADS=$i ./stream; done
+
+echo "SCATTER"
+for i in `seq 1 20`; do KMP_AFFINITY="scatter" OMP_NUM_THREADS=$i ./stream; done
