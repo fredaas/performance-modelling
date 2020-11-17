@@ -2,7 +2,7 @@
 
 system=$1
 
-CFLAGS="-std=c99 -Wall -O2 -Wno-unused-but-set-variable "
+CFLAGS="-std=c99 -Wall -O2 -I./ -Wno-unused-but-set-variable "
 
 case $1 in
 # Intel Core i7-7700HQ

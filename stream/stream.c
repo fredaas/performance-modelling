@@ -19,24 +19,11 @@
 #include <sys/time.h>
 #include <omp.h>
 
-/* Operand unit type */
-typedef double real_t;
-
-/* Number of benchmark iterations */
-#ifndef NUM_BENCH
-#define NUM_BENCH 10
-#endif
-
-#ifndef STREAM_ARRAY_SIZE
-#define STREAM_ARRAY_SIZE 10000000
-#endif
+#include "common.h"
 
 static real_t a[STREAM_ARRAY_SIZE];
 static real_t b[STREAM_ARRAY_SIZE];
 static real_t c[STREAM_ARRAY_SIZE];
-
-enum { COPY, SCALE, ADD, TRIAD };
-enum { MIN, MAX, AVG };
 
 int L3_SIZE = 0;
 
@@ -193,28 +180,6 @@ void run_stream(void)
         (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][MAX],
         (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][MIN],
         (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][AVG]
-    );
-}
-
-void print_params(void)
-{
-    double bytes = STREAM_ARRAY_SIZE * sizeof(real_t);
-
-    printf("OPERAND SIZE: %d (should be at least 4 x times L3 cache)\n",
-        STREAM_ARRAY_SIZE);
-
-    printf("OPERAND MEMORY: %.2lf MiB (%.2lf x times L3 cache)\n",
-        bytes / (float)(1024 * 1024), bytes / (double)L3_SIZE);
-
-    printf("TOTAL MEMORY: %.2lf MiB (%.2lf x times L3 cache)\n",
-        3 * bytes / (float)(1024 * 1024), 3 * bytes / (double)L3_SIZE);
-
-    printf("L3 SIZE: %d KiB\n",
-        L3_SIZE / 1024
-    );
-
-    printf("CLOCK TICKS: %d\n",
-        clock_ticks()
     );
 }
 
