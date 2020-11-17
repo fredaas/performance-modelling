@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+#SBATCH --account=nn9589k
+#SBATCH --partition=normal
+#SBATCH --time=00:10:00
+#SBATCH --threads-per-core=1
+#SBATCH --job-name="mpitest"
+#SBATCH --output=mpitest_%j.txt
+
+cd ${SLURM_SUBMIT_DIR}
+
+echo "WORKING DIR: $SLURM_SUBMIT_DIR"
+echo "JOB NAME: $SLURM_JOB_NAME"
+echo "JOB ID: $SLURM_JOB_ID"
+echo "NODES ($SLURM_JOB_NUM_NODES): $SLURM_JOB_NODELIST"
+
+# Scatter
+srun --account=nn9589k --nodes=1 --ntasks-per-node=32 --cpu-bind=verbose,cores --distribution=block:cyclic --mpi=pmi2 ./main
+# Compact
+srun --account=nn9589k --nodes=1 --ntasks-per-node=32 --cpu-bind=verbose,cores --distribution=block:block --mpi=pmi2 ./main
