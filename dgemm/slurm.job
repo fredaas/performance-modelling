@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+#SBATCH --account=share-ie-idi
+#SBATCH --partition=CPUQ
+#SBATCH --nodes=1
+#SBATCH --exclusive
+#SBATCH --threads-per-core=1
+
+# share-ie-idi, nn9589k
+
+cd ${SLURM_SUBMIT_DIR}
+
+echo "# cores min, max, avg [gigaFLOPS]"
+for i in `seq 1 32`; do OMP_NUM_THREADS=$i ./dgemm; done

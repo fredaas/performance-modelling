@@ -1,7 +1,7 @@
 all : clean stream params
 
 params : params.c
-	$(CC) -o $@ $< $(CFLAGS)
+	$(CC) -o $@ $< -std=c99 -Wall -O2 -I./
 
 stream : stream.c
 	$(CC) -o $@ $< $(CFLAGS)

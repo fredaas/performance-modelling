@@ -23,3 +23,6 @@ plot 'idun_gold_scatter.txt' u 1:($3) title 'Scatter', \
 set title 'FRAM: Intel Xeon E5-2683 v4'
 plot 'fram_e5_scatter.txt' u 1:($3) title 'Scatter', \
      'fram_e5_compact.txt' u 1:($3) title 'Compact', \
+
+set title 'BETZY'
+plot 'betzy_epyc_compact.txt' u 1:($3) title '', \

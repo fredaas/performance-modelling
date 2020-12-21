@@ -7,8 +7,14 @@
  *
  *     The benchmark requires different amounts of memory on different systems.
  *     In general, each operand should be at least 4 x times the size of the
- *     largest available cache memory. (L3 on most modern systems.) Use params.c
- *     to inspect the memory ratio for the current parameter settings.
+ *     combined size of all available top-level caches. (L3 on most modern
+ *     systems.) Use params.c to inspect the memory ratio for different
+ *     parameter settings.
+ *
+ *  EXAMPLE
+ *
+ *     STREAM_ARRAY_SIZE should be at least 20 million elements for a dual
+ *     socket system with two CPUs having 20 MiB L3 caches.
  */
 
 #include <stdio.h>
@@ -20,11 +26,13 @@
 
 #include "common.h"
 
+#ifndef STREAM_ARRAY_SIZE
+#define STREAM_ARRAY_SIZE 10000000
+#endif
+
 static real_t a[STREAM_ARRAY_SIZE];
 static real_t b[STREAM_ARRAY_SIZE];
 static real_t c[STREAM_ARRAY_SIZE];
-
-int L3_SIZE = 0;
 
 /* MIN, MAX, AVG */
 static double timings[4][3] = {
@@ -34,29 +42,10 @@ static double timings[4][3] = {
     [TRIAD] = { FLT_MAX, 0.0, 0.0 }
 };
 
-long BYTES_COPY  = 0;
-long BYTES_SCALE = 0;
-long BYTES_ADD   = 0;
-long BYTES_TRIAD = 0;
+double BYTES_TRIAD = 0;
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-void configure_memory(void)
-{
-    if (!getenv("L3_SIZE"))
-    {
-        printf("[ERROR] L3_SIZE not set\n");
-        exit(1);
-    }
-
-    L3_SIZE = atoi(getenv("L3_SIZE")) * 1024;
-
-    BYTES_COPY  = 2 * sizeof(real_t) * STREAM_ARRAY_SIZE;
-    BYTES_SCALE = 2 * sizeof(real_t) * STREAM_ARRAY_SIZE;
-    BYTES_ADD   = 3 * sizeof(real_t) * STREAM_ARRAY_SIZE;
-    BYTES_TRIAD = 3 * sizeof(real_t) * STREAM_ARRAY_SIZE;
-}
 
 double walltime(void)
 {
@@ -94,6 +83,8 @@ int clock_ticks()
 void run_stream(void)
 {
     double t_start, t_latency;
+
+    BYTES_TRIAD = 3 * sizeof(real_t) * (STREAM_ARRAY_SIZE * 1.0E-9);
 
     #pragma omp parallel for
     for (int j = 0; j < STREAM_ARRAY_SIZE; j++)
@@ -176,16 +167,14 @@ void run_stream(void)
 
     printf("%d %.1lf %.1lf %.1lf [GB/s]\n",
         threads,
-        (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][MAX],
-        (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][MIN],
-        (BYTES_TRIAD * 1.0E-9) / timings[TRIAD][AVG]
+        BYTES_TRIAD / timings[TRIAD][MAX],
+        BYTES_TRIAD / timings[TRIAD][MIN],
+        BYTES_TRIAD / timings[TRIAD][AVG]
     );
 }
 
 int main(void)
 {
-    configure_memory();
-
     run_stream();
 
     return 0;

@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+#
+# USAGE
+#
+#     lsidle
+#
+# DESCRIPTION
+#
+#     Lists number of idle nodes from specific node groups.
+#
+
+use warnings;
+use strict;
+
+my @nodenames = split(" ", "pe630 pec6420 pe730 pe740 dss8440 sd530");
+
+my @nodes = split(/\n/, `sinfo -Nl`);
+
+foreach my $nodename (@nodenames)
+{
+    my @group = grep(/$nodename/, @nodes);
+    my @idle = grep(/idle/, @group);
+    my $n_total = scalar @group;
+    if ($n_total > 0)
+    {
+        my $n_idle = scalar @idle;
+        my $queuename = (split(" ", $group[0]))[2];
+        printf("%-10s %-10s %d/%d\n", $queuename, $nodename, $n_idle, $n_total);
+    }
+}

@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+#SBATCH --account=share-ie-idi
+#SBATCH --partition=CPUQ
+#SBATCH --distribution=block:block
+#SBATCH --exclusive
+#SBATCH --threads-per-core=1
+
+# share-ie-idi, nn9589k
+
+cd ${SLURM_SUBMIT_DIR}
+
+mpiexec -n $NUM_TASKS ./comms1_map

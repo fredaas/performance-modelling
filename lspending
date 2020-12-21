@@ -1,0 +1,12 @@
+#!/usr/bin/env bash#
+#
+# USAGE
+#
+#     lspending
+#
+# DESCRIPTION
+#
+#     Prints pending jobs with selected attributes.
+#
+
+squeue -h -o "[%T] %A %P %u %f %D" | grep PENDING
