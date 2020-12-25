@@ -8,6 +8,9 @@ def on_same_socket(i, j, ncores, affinity):
         n = ncores / 2
         return int(i / n) == int(j / n)
 
+def on_same_node(i, j, ncores):
+    return int(i / ncores) == int(j / ncores)
+
 def fread(path):
     fp = open(path, "r")
     content = fp.read().split("\n")
@@ -51,33 +54,21 @@ PARAMETERS
     count_inter_socket = 0
     count_inter_node   = 0
 
-    for rank_i, row in enumerate(matrix):
+    for i, row in enumerate(matrix):
         cols = row.strip().split(" ")
-        start = rank_i + 1
-        node_i = int(rank_i / ncores)
-        for rank_j, col in enumerate(cols[start:], start=start):
-            node_j = int(rank_j / ncores)
+        start = i + 1
+        for j, col in enumerate(cols[start:], start=start):
             col = float(col)
-            # Rank i and j are on separate nodes
-            if node_j > node_i:
+            if not on_same_node(i, j, ncores):
                 if col < min_inter_node:
                     min_inter_node = col
                 if col > max_inter_node:
                     max_inter_node = col
                 avg_inter_node += col
                 count_inter_node += 1
-            # Rank i and j are on the same node
             else:
-                if nsockets == 1:
-                    if col < min_intra_socket:
-                        min_intra_socket = col
-                    if col > max_intra_socket:
-                        max_intra_socket = col
-                    avg_intra_socket += col
-                    count_intra_socket += 1
-                else:
-                    # Rank i and j are on the same socket
-                    if on_same_socket(rank_i, rank_j, ncores, affinity):
+                if nsockets == 2:
+                    if on_same_socket(i, j, ncores, affinity):
                         if col < min_intra_socket:
                             min_intra_socket = col
                         if col > max_intra_socket:
@@ -91,6 +82,13 @@ PARAMETERS
                             max_inter_socket = col
                         avg_inter_socket += col
                         count_inter_socket += 1
+                elif nsockets == 1:
+                    if col < min_intra_socket:
+                        min_intra_socket = col
+                    if col > max_intra_socket:
+                        max_intra_socket = col
+                    avg_intra_socket += col
+                    count_intra_socket += 1
 
     if count_intra_socket > 0:
         avg_intra_socket /= count_intra_socket
