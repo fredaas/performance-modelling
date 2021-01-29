@@ -28,19 +28,19 @@ void cuda_assert(cudaError_t code, const char *file, int line)
 void mem_ustring(char *s, long bytes)
 {
     double usize = 0;
-    if (bytes > 10E+9)
+    if (bytes > 1E+9)
     {
-        usize = bytes / 10E+9;
+        usize = bytes / 1E+9;
         sprintf(s, "%.2lf GB", usize);
     }
-    else if (bytes > 10E+6)
+    else if (bytes > 1E+6)
     {
-        usize = bytes / 10E+6;
+        usize = bytes / 1E+6;
         sprintf(s, "%.2lf MB", usize);
     }
-    else if (bytes > 10E+3)
+    else if (bytes > 1E+3)
     {
-        usize = bytes / 10E+3;
+        usize = bytes / 1E+3;
         sprintf(s, "%.2lf KB", usize);
     }
     else
