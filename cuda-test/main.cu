@@ -59,6 +59,10 @@ void print_device_info(void)
         cudaDeviceProp device_prop;
         cudaGetDeviceProperties(&device_prop, n);
 
+        size_t free_mem;;
+
+        cudaMemGetInfo(&free_mem, NULL);
+
         int device_threads = device_prop.multiProcessorCount * device_prop.maxThreadsPerMultiProcessor;
 
         printf("Device %d: %s\n", n, device_prop.name);
@@ -68,8 +72,10 @@ void print_device_info(void)
         printf("    Global memory size:      %s\n", ustring);
         mem_ustring(ustring, device_prop.sharedMemPerBlock);
         printf("    Shared memory size:      %s\n", ustring);
-        mem_ustring(ustring, device_prop.totalGlobalMem);
+        mem_ustring(ustring, device_prop.totalConstMem);
         printf("    Constant memory size:    %s\n", ustring);
+        mem_ustring(ustring, free_mem);
+        printf("    Total free memory:       %s\n", ustring);
         printf("    Warp size:               %d\n", device_prop.warpSize);
     }
     printf("\n");
