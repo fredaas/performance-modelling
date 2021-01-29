@@ -155,7 +155,7 @@ void run_device_test(void)
 
 int main(void)
 {
-    cudaGetDeviceCount(&num_devices);
+    error_check(cudaGetDeviceCount(&num_devices));
     if (num_devices > 0)
     {
         print_device_info();
